@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   saveTodoListToLocalStorage,
   getTodoListFromLocalStorage,
@@ -6,25 +6,18 @@ import {
 } from "./utils/LocalStorage";
 
 function TodoList() {
-  const [todos, setTodos] = useState([]);
-  const [filteredTodos, setFilteredTodos] = useState([]);
+  const [todos, setTodos] = useState(getTodoListFromLocalStorage());
   const [inputValue, setInputValue] = useState("");
   const [editIndex, setEditIndex] = useState(null);
   const [filter, setFilter] = useState("All");
 
-  useEffect(() => {
-    const storedTodos = getTodoListFromLocalStorage();
-    setTodos(storedTodos);
-  }, []);
-
-  useEffect(() => {
+  const filteredTodos = () => {
     if (filter === "All") {
-      setFilteredTodos(todos);
+      return todos;
     } else {
-      const filtered = todos.filter((todo) => todo.status === filter);
-      setFilteredTodos(filtered);
+      return todos.filter((todo) => todo.status === filter);
     }
-  }, [todos, filter]);
+  };
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -109,7 +102,7 @@ function TodoList() {
         </button>
       </div>
       <ul className="p-2 w-[50%]">
-        {filteredTodos.map((todo, index) => (
+        {filteredTodos().map((todo, index) => (
           <li
             key={todo.id}
             className="flex items-center justify-between p-2.5 mt-4 bg-gray-50"
