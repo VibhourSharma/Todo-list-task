@@ -8,7 +8,7 @@ import {
 function TodoList() {
   const [todos, setTodos] = useState(getTodoListFromLocalStorage());
   const [inputValue, setInputValue] = useState("");
-  const [editIndex, setEditIndex] = useState(null);
+  const [editId, setEditId] = useState(null);
   const [filter, setFilter] = useState("All");
 
   const filteredTodos = () => {
@@ -30,15 +30,12 @@ function TodoList() {
         text: inputValue,
         status: "Pending",
       };
-      if (editIndex !== null) {
-        const editedTodo = {
-          ...todos[editIndex],
-          text: inputValue,
-        };
-        const newTodos = [...todos];
-        newTodos[editIndex] = editedTodo;
+      if (editId !== null) {
+        const newTodos = todos.map((todo) =>
+          todo.id === editId ? { ...todo, text: inputValue } : todo
+        );
         setTodos(newTodos);
-        setEditIndex(null);
+        setEditId(null);
         saveTodoListToLocalStorage(newTodos);
       } else {
         setTodos([...todos, newTodo]);
@@ -51,9 +48,9 @@ function TodoList() {
   const handleRemoveTodo = (id) => {
     const newTodos = todos.filter((todo) => todo.id !== id);
     setTodos(newTodos);
-    setInputValue("");
-    setEditIndex(null);
     saveTodoListToLocalStorage(newTodos);
+    setInputValue("");
+    setEditId(null);
   };
 
   const toggleTodoStatus = (id) => {
@@ -69,9 +66,12 @@ function TodoList() {
     saveTodoListToLocalStorage(newTodos);
   };
 
-  const handleEditTodo = (index) => {
-    setInputValue(todos[index].text);
-    setEditIndex(index);
+  const handleEditTodo = (id) => {
+    const todoToEdit = todos.find((todo) => todo.id === id);
+    if (todoToEdit) {
+      setInputValue(todoToEdit.text);
+      setEditId(id);
+    }
   };
 
   return (
@@ -98,11 +98,11 @@ function TodoList() {
           onClick={handleAddTodo}
           className="w-20 p-1 rounded-md border bg-teal-500 text-white hover:bg-white hover:text-teal-500 hover:border-teal-500 transition-all ease-linear"
         >
-          {editIndex !== null ? "Save" : "Add"}
+          {editId !== null ? "Save" : "Add"}
         </button>
       </div>
       <ul className="p-2 w-[50%]">
-        {filteredTodos().map((todo, index) => (
+        {filteredTodos().map((todo) => (
           <li
             key={todo.id}
             className="flex items-center justify-between p-2.5 mt-4 bg-gray-50"
@@ -119,7 +119,7 @@ function TodoList() {
             </span>
             <div className="flex items-center justify-center gap-8 text-sm">
               <button
-                onClick={() => handleEditTodo(index)}
+                onClick={() => handleEditTodo(todo.id)}
                 className="border border-violet-600 text-violet-600 px-4 py-1 rounded-lg disabled:border-slate-400 disabled:text-slate-400 disabled:cursor-not-allowed"
                 disabled={todo.status === "Complete"}
               >
@@ -135,7 +135,7 @@ function TodoList() {
               <button
                 onClick={() => handleRemoveTodo(todo.id)}
                 className="border border-red-600 text-red-600 px-3 py-1 rounded-lg"
-                disabled={editIndex === ""}
+                disabled={editId === ""}
               >
                 Remove
               </button>
