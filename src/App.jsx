@@ -1,9 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  saveTodoListToLocalStorage,
+  getTodoListFromLocalStorage,
+  generateUniqueId,
+} from "./utils/LocalStorage";
 
 function TodoList() {
   const [todos, setTodos] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [editIndex, setEditIndex] = useState(null);
+
+  useEffect(() => {
+    const storedTodos = getTodoListFromLocalStorage();
+    setTodos(storedTodos);
+  }, []);
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -11,30 +21,48 @@ function TodoList() {
 
   const handleAddTodo = () => {
     if (inputValue.trim() !== "") {
+      const newTodo = {
+        id: generateUniqueId(),
+        text: inputValue,
+        status: "Pending",
+      };
       if (editIndex !== null) {
+        const editedTodo = {
+          ...todos[editIndex],
+          text: inputValue,
+        };
         const newTodos = [...todos];
-        newTodos[editIndex].text = inputValue;
+        newTodos[editIndex] = editedTodo;
         setTodos(newTodos);
         setEditIndex(null);
+        saveTodoListToLocalStorage(newTodos);
       } else {
-        setTodos([...todos, { text: inputValue, status: "Active" }]);
+        setTodos([...todos, newTodo]);
+        saveTodoListToLocalStorage([...todos, newTodo]);
       }
       setInputValue("");
     }
   };
 
-  const handleRemoveTodo = (index) => {
-    const newTodos = [...todos];
-    newTodos.splice(index, 1);
+  const handleRemoveTodo = (id) => {
+    const newTodos = todos.filter((todo) => todo.id !== id);
     setTodos(newTodos);
     setInputValue("");
+    setEditIndex(null);
+    saveTodoListToLocalStorage(newTodos);
   };
 
-  const toggleTodoStatus = (index) => {
-    const newTodos = [...todos];
-    newTodos[index].status =
-      newTodos[index].status === "Active" ? "Complete" : "Active";
+  const toggleTodoStatus = (id) => {
+    const newTodos = todos.map((todo) =>
+      todo.id === id
+        ? {
+            ...todo,
+            status: todo.status === "Pending" ? "Complete" : "Pending",
+          }
+        : todo
+    );
     setTodos(newTodos);
+    saveTodoListToLocalStorage(newTodos);
   };
 
   const handleEditTodo = (index) => {
@@ -45,34 +73,59 @@ function TodoList() {
   return (
     <div className="flex items-center justify-center flex-col">
       <span className="text-2xl p-2 m-2 font-bold">Todo List</span>
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex items-center justify-center gap-2">
         <input
           type="text"
           value={inputValue}
           onChange={handleInputChange}
           placeholder="Enter a todo..."
-          className="p-1 w-72"
+          className="p-1 w-72 outline-none border placeholder:font-mono hover:border-gray-400 ease-linear transition-all"
         />
-        <button onClick={handleAddTodo} className="">
-          {editIndex !== null ? "Edit" : "Add"}
+        <button
+          onClick={handleAddTodo}
+          className="w-20 p-1 rounded-md border bg-teal-500 text-white hover:bg-white hover:text-teal-500 hover:border-teal-500 transition-all ease-linear"
+        >
+          {editIndex !== null ? "Save" : "Add"}
         </button>
       </div>
       <ul className="p-2 w-[50%]">
         {todos.map((todo, index) => (
           <li
-            key={index}
-            className="flex items-center justify-center gap-24 p-2 mt-2"
+            key={todo.id}
+            className="flex items-center justify-between p-2.5 mt-4 bg-gray-50"
           >
-            <span>{todo.text}</span>
-            <span>Status: {todo.status}</span>
-            <button
-              onClick={() => toggleTodoStatus(index)}
-              disabled={todo.status === "Complete"}
+            <span className="font-semibold max-w-52">{todo.text}</span>
+            <span
+              className={`text-xs font-mono p-1 rounded-lg ${
+                todo.status === "Complete"
+                  ? "text-green-600 border border-green-600"
+                  : "bg-orange-100 rounded-md border border-orange-500"
+              }`}
             >
-              {todo.status === "Active" ? "Complete" : "Re-activate"}
-            </button>
-            <button onClick={() => handleEditTodo(index)}>Edit</button>
-            <button onClick={() => handleRemoveTodo(index)}>Remove</button>
+              {todo.status}
+            </span>
+            <div className="flex items-center justify-center gap-8 text-sm">
+              <button
+                onClick={() => handleEditTodo(index)}
+                className="border border-violet-600 text-violet-600 px-4 py-1 rounded-lg"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => toggleTodoStatus(todo.id)}
+                disabled={todo.status === "Complete"}
+                className="border border-blue-600 text-blue-600 p-1 rounded-lg disabled:border-slate-400 disabled:text-slate-400 disabled:cursor-not-allowed"
+              >
+                Complete
+              </button>
+              <button
+                onClick={() => handleRemoveTodo(todo.id)}
+                className="border border-red-600 text-red-600 px-3 py-1 rounded-lg"
+                disabled={editIndex === ""}
+              >
+                Remove
+              </button>
+            </div>
           </li>
         ))}
       </ul>
