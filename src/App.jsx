@@ -7,13 +7,24 @@ import {
 
 function TodoList() {
   const [todos, setTodos] = useState([]);
+  const [filteredTodos, setFilteredTodos] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [editIndex, setEditIndex] = useState(null);
+  const [filter, setFilter] = useState("All");
 
   useEffect(() => {
     const storedTodos = getTodoListFromLocalStorage();
     setTodos(storedTodos);
   }, []);
+
+  useEffect(() => {
+    if (filter === "All") {
+      setFilteredTodos(todos);
+    } else {
+      const filtered = todos.filter((todo) => todo.status === filter);
+      setFilteredTodos(filtered);
+    }
+  }, [todos, filter]);
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -72,8 +83,17 @@ function TodoList() {
 
   return (
     <div className="flex items-center justify-center flex-col">
-      <span className="text-2xl p-2 m-2 font-bold">Todo List</span>
+      <span className="text-3xl p-2 m-2 font-bold">Todo List</span>
       <div className="flex items-center justify-center gap-2">
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="p-2 border outline-none rounded-md"
+        >
+          <option value="All">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Complete">Complete</option>
+        </select>
         <input
           type="text"
           value={inputValue}
@@ -89,7 +109,7 @@ function TodoList() {
         </button>
       </div>
       <ul className="p-2 w-[50%]">
-        {todos.map((todo, index) => (
+        {filteredTodos.map((todo, index) => (
           <li
             key={todo.id}
             className="flex items-center justify-between p-2.5 mt-4 bg-gray-50"
@@ -107,7 +127,8 @@ function TodoList() {
             <div className="flex items-center justify-center gap-8 text-sm">
               <button
                 onClick={() => handleEditTodo(index)}
-                className="border border-violet-600 text-violet-600 px-4 py-1 rounded-lg"
+                className="border border-violet-600 text-violet-600 px-4 py-1 rounded-lg disabled:border-slate-400 disabled:text-slate-400 disabled:cursor-not-allowed"
+                disabled={todo.status === "Complete"}
               >
                 Edit
               </button>
